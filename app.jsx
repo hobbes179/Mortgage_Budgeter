@@ -1,6 +1,12 @@
 // Main app
 const { useState, useMemo, useEffect } = React;
 
+const STORAGE_KEY = "home-planner-v1";
+const _S = (() => {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
+  catch { return {}; }
+})();
+
 const REMAINDER_CATS = [
   { id: "emergency", name: "Emergency & savings", color: "oklch(0.55 0.07 165)" },
   { id: "retirement", name: "Post-tax investing", color: "oklch(0.55 0.09 255)" },
@@ -10,30 +16,30 @@ const REMAINDER_CATS = [
 
 function App() {
   // ---- Primary inputs ----
-  const [income, setIncome] = useState(10500);           // gross monthly (stored as monthly internally)
-  const [incomeMode, setIncomeMode] = useState("monthly"); // monthly | annual (display only)
-  const [pretaxRetirement, setPretaxRetirement] = useState(500); // 401k / 403b / pre-tax IRA per month
-  const [pretaxMode, setPretaxMode] = useState("monthly"); // monthly | annual (display only)
-  const [filingStatus, setFilingStatus] = useState("single"); // single | mfj | hoh
-  const [dependents, setDependents] = useState(0);
-  const [stateTaxRate, setStateTaxRate] = useState(0.05);  // state income tax (decimal)
-  const [homePrice, setHomePrice] = useState(620000);
-  const [downMode, setDownMode] = useState("pct");       // "pct" | "dol"
-  const [downPct, setDownPct] = useState(20);            // %
-  const [rate15, setRate15] = useState(0.05875);
-  const [rate30, setRate30] = useState(0.0650);
-  const [propTax, setPropTax] = useState(0.011);         // 1.1% annual
-  const [insurance, setInsurance] = useState(150);
-  const [hoa, setHoa] = useState(0);
-  const [otherDebts, setOtherDebts] = useState(480);
-  const [invReturn, setInvReturn] = useState(0.07);
+  const [income, setIncome] = useState(_S.income ?? 10500);
+  const [incomeMode, setIncomeMode] = useState(_S.incomeMode ?? "monthly");
+  const [pretaxRetirement, setPretaxRetirement] = useState(_S.pretaxRetirement ?? 500);
+  const [pretaxMode, setPretaxMode] = useState(_S.pretaxMode ?? "monthly");
+  const [filingStatus, setFilingStatus] = useState(_S.filingStatus ?? "single");
+  const [dependents, setDependents] = useState(_S.dependents ?? 0);
+  const [stateTaxRate, setStateTaxRate] = useState(_S.stateTaxRate ?? 0.05);
+  const [homePrice, setHomePrice] = useState(_S.homePrice ?? 620000);
+  const [downMode, setDownMode] = useState(_S.downMode ?? "pct");
+  const [downPct, setDownPct] = useState(_S.downPct ?? 20);
+  const [rate15, setRate15] = useState(_S.rate15 ?? 0.05875);
+  const [rate30, setRate30] = useState(_S.rate30 ?? 0.0650);
+  const [propTax, setPropTax] = useState(_S.propTax ?? 0.011);
+  const [insurance, setInsurance] = useState(_S.insurance ?? 150);
+  const [hoa, setHoa] = useState(_S.hoa ?? 0);
+  const [otherDebts, setOtherDebts] = useState(_S.otherDebts ?? 480);
+  const [invReturn, setInvReturn] = useState(_S.invReturn ?? 0.07);
 
   // Remainder allocation percentages — must sum to 100. We let users set 3; the 4th is residual.
-  const [alloc, setAlloc] = useState({ emergency: 25, retirement: 30, necessities: 35 });
+  const [alloc, setAlloc] = useState(_S.alloc ?? { emergency: 25, retirement: 30, necessities: 35 });
   const allocLifestyle = Math.max(0, 100 - alloc.emergency - alloc.retirement - alloc.necessities);
 
   // Which loan term the budget bar reflects
-  const [budgetTerm, setBudgetTerm] = useState(30);
+  const [budgetTerm, setBudgetTerm] = useState(_S.budgetTerm ?? 30);
 
   // ---- Derived ----
   const grossMonthly = income;
@@ -91,9 +97,89 @@ function App() {
     lifestyle: remainder * (allocLifestyle / 100),
   };
 
+  // Autosave to localStorage on every state change
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        income, incomeMode, pretaxRetirement, pretaxMode,
+        filingStatus, dependents, stateTaxRate,
+        homePrice, downMode, downPct,
+        rate15, rate30, propTax, insurance, hoa,
+        otherDebts, invReturn, alloc, budgetTerm,
+      }));
+    } catch {}
+  }, [income, incomeMode, pretaxRetirement, pretaxMode,
+      filingStatus, dependents, stateTaxRate,
+      homePrice, downMode, downPct,
+      rate15, rate30, propTax, insurance, hoa,
+      otherDebts, invReturn, alloc, budgetTerm]);
+
+  const handleExport = () => {
+    const plan = {
+      version: 1, savedAt: new Date().toISOString(),
+      income, incomeMode, pretaxRetirement, pretaxMode,
+      filingStatus, dependents, stateTaxRate,
+      homePrice, downMode, downPct,
+      rate15, rate30, propTax, insurance, hoa,
+      otherDebts, invReturn, alloc, budgetTerm,
+    };
+    const blob = new Blob([JSON.stringify(plan, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `home-plan-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const d = JSON.parse(ev.target.result);
+        if (d.income != null) setIncome(Number(d.income));
+        if (d.incomeMode != null) setIncomeMode(d.incomeMode);
+        if (d.pretaxRetirement != null) setPretaxRetirement(Number(d.pretaxRetirement));
+        if (d.pretaxMode != null) setPretaxMode(d.pretaxMode);
+        if (d.filingStatus != null) setFilingStatus(d.filingStatus);
+        if (d.dependents != null) setDependents(Number(d.dependents));
+        if (d.stateTaxRate != null) setStateTaxRate(Number(d.stateTaxRate));
+        if (d.homePrice != null) setHomePrice(Number(d.homePrice));
+        if (d.downMode != null) setDownMode(d.downMode);
+        if (d.downPct != null) setDownPct(Number(d.downPct));
+        if (d.rate15 != null) setRate15(Number(d.rate15));
+        if (d.rate30 != null) setRate30(Number(d.rate30));
+        if (d.propTax != null) setPropTax(Number(d.propTax));
+        if (d.insurance != null) setInsurance(Number(d.insurance));
+        if (d.hoa != null) setHoa(Number(d.hoa));
+        if (d.otherDebts != null) setOtherDebts(Number(d.otherDebts));
+        if (d.invReturn != null) setInvReturn(Number(d.invReturn));
+        if (d.alloc && typeof d.alloc === "object") setAlloc(d.alloc);
+        if (d.budgetTerm != null) setBudgetTerm(Number(d.budgetTerm));
+      } catch {}
+      e.target.value = "";
+    };
+    reader.readAsText(file);
+  };
+
   return (
     <div className="app">
-      <TopBar />
+      <TopBar onExport={handleExport} onImport={handleImport} onPrint={() => window.print()} />
+
+      <div className="print-assumptions">
+        <div className="pa-row">
+          <span><b>Property</b> {fmtMoney(homePrice)} · down {downPct.toFixed(1)}% ({fmtMoney(downPayment)}) · loan {fmtMoney(principal)}</span>
+          <span><b>Rates</b> 15-yr {fmtPct(rate15, 2)} · 30-yr {fmtPct(rate30, 2)} · prop tax {fmtPct(propTax, 2)}/yr · ins {fmtMoney(insurance)}/mo{hoa > 0 ? ` · HOA ${fmtMoney(hoa)}/mo` : ""}</span>
+        </div>
+        <div className="pa-row">
+          <span><b>Income</b> {fmtMoney(grossMonthly)}/mo gross · {fmtMoney(netMonthly, {dp:0})}/mo take-home · {(taxRate * 100).toFixed(1)}% effective tax ({filingStatus === "mfj" ? "Married" : filingStatus === "hoh" ? "HoH" : "Single"}{dependents > 0 ? `, ${dependents} dep.` : ""})</span>
+          {otherDebts > 0 && <span><b>Other debts</b> {fmtMoney(otherDebts)}/mo</span>}
+        </div>
+      </div>
 
       <div className="layout">
         {/* ===================== LEFT — INPUTS ===================== */}
@@ -323,7 +409,7 @@ function App() {
   );
 }
 
-function TopBar() {
+function TopBar({ onExport, onImport, onPrint }) {
   return (
     <div className="topbar">
       <div className="brand">
@@ -337,9 +423,19 @@ function TopBar() {
           <div className="brand-sub">Mortgage · Budget · 30-yr Outlook</div>
         </div>
       </div>
-      <div className="topbar-meta">
-        <span><span className="dot"></span> Live recalculation</span>
-        <span>v1.0</span>
+      <div style={{display: "flex", gap: 18, alignItems: "center"}}>
+        <div className="topbar-actions">
+          <button className="action-btn" onClick={onExport}>↓ Export</button>
+          <label className="action-btn">
+            ↑ Import
+            <input type="file" accept=".json" style={{display: "none"}} onChange={onImport} />
+          </label>
+          <button className="action-btn" onClick={onPrint}>PDF</button>
+        </div>
+        <div className="topbar-meta">
+          <span><span className="dot"></span> Live recalculation</span>
+          <span>v1.0</span>
+        </div>
       </div>
     </div>
   );
@@ -513,7 +609,7 @@ function BudgetCard({ grossMonthly, netMonthly, taxes, taxRate, pretax, piti, ot
       </div>
 
       {/* Allocation editor */}
-      <div style={{marginTop: 22}}>
+      <div className="alloc-section" style={{marginTop: 22}}>
         <div className="section-label" style={{marginBottom: 10}}>
           Plan your post-tax remainder · <span style={{color: "var(--ink)"}}>{fmtMoney(remainder)}</span> left after pre-tax retirement, taxes, housing &amp; debts
         </div>

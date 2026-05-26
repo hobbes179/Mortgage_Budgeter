@@ -96,6 +96,32 @@ body {
   align-items: center;
 }
 .topbar-meta .dot { width: 6px; height: 6px; background: var(--c15); border-radius: 50%; display: inline-block; }
+.topbar-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  user-select: none;
+}
+.action-btn:hover {
+  border-color: var(--ink-2);
+  background: var(--surface-2);
+}
 
 /* ============ Layout ============ */
 .layout {
@@ -679,6 +705,105 @@ body {
 .tip-c30 { color: oklch(0.85 0.10 60); }
 .tip-inv { color: oklch(0.85 0.08 255); }
 
+/* ============ Print-only assumptions summary ============ */
+.print-assumptions {
+  display: none;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line-2);
+}
+.pa-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 28px;
+  padding: 3px 0;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+.pa-row b { color: var(--ink); font-weight: 500; }
+
+/* ============ Print / Save as PDF ============ */
+@media print {
+  @page {
+    size: 8.5in 11in portrait;
+    margin: 0.4in 0.5in;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body { font-size: 12px; }
+  .app { padding: 0; max-width: 100%; }
+
+  /* Show print-only content */
+  .print-assumptions { display: block !important; }
+
+  /* Hide interactive / non-print elements */
+  .topbar-actions { display: none !important; }
+  .topbar-meta    { display: none !important; }
+  .fineprint      { display: none !important; }
+  .panel          { display: none !important; }
+  .alloc-section  { display: none !important; }
+  .scenario-toggle { display: none !important; }
+
+  /* Topbar */
+  .topbar { padding-bottom: 10px; margin-bottom: 0; }
+  .brand-title { font-size: 18px; }
+
+  /* Single-column layout — inputs panel hidden so col-right fills the page */
+  .layout { display: block; }
+  .col-right { display: flex; flex-direction: column; gap: 12px; }
+
+  /* Cards */
+  .card {
+    padding: 14px 16px;
+    border-radius: 6px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .card-head { margin-bottom: 10px; }
+  .card-title { font-size: 16px; }
+  .card-desc  { font-size: 11px; }
+
+  /* Hero comparison */
+  .hero { break-inside: avoid; page-break-inside: avoid; }
+  .hero-card { padding: 14px 16px; }
+  .hero-big  { font-size: 38px; margin-top: 8px; line-height: 1.05; }
+  .hero-big .cents { font-size: 18px; }
+  .hero-grid { margin-top: 10px; padding-top: 8px; }
+  .hero-stat .v.small { font-size: 14px; }
+  .hero-sub { font-size: 10.5px; }
+
+  /* Budget bar */
+  .budget-bar { height: 32px; }
+  .budget-legend {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 3px 10px;
+  }
+  .legend-name { font-size: 11px; }
+  .legend-val  { font-size: 10.5px; }
+
+  /* DTI gauges */
+  .gauge-row { gap: 10px; }
+  .gauge { padding: 10px 12px; }
+  .gauge-val  { font-size: 20px; }
+  .gauge-note { font-size: 10.5px; }
+
+  /* Projection chart */
+  .chart-wrap { margin-top: 4px; }
+  .chart-legend { gap: 8px 12px; margin-top: 8px; font-size: 11px; }
+
+  /* Verdict */
+  .verdict { break-inside: avoid; page-break-inside: avoid; }
+  .verdict-cell { padding: 14px 16px; }
+  .verdict-v    { font-size: 22px; }
+  .verdict-note { font-size: 11px; }
+}
+
 /* ===================== Responsive ===================== */
 @media (max-width: 1100px) {
   .app { padding: 22px 24px 60px; }
@@ -810,4 +935,5 @@ body {
   .field-hint { margin-top: -2px; }
 
   .topbar-meta { display: none; }
+  .action-btn { height: 26px; padding: 0 10px; font-size: 10px; }
 }
