@@ -228,9 +228,10 @@ body {
   text-align: right;
   padding: 0 2px;
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 .input-wrap input::-webkit-outer-spin-button,
-.input-wrap input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.input-wrap input::-webkit-inner-spin-button { -webkit-appearance: none; appearance: none; margin: 0; }
 
 /* Slider */
 .slider-row {
@@ -728,7 +729,13 @@ body {
 @media print {
   @page {
     size: 8.5in 11in portrait;
-    margin: 0.4in 0.5in;
+    margin: 0; /* zero margin removes browser URL/date/page-number headers */
+  }
+
+  html {
+    /* Scale the whole page to 75% so all content lands on one sheet.
+       @page margin:0 means our .app padding becomes the physical margin. */
+    zoom: 0.75;
   }
 
   * {
@@ -737,17 +744,22 @@ body {
   }
 
   body { font-size: 12px; }
-  .app { padding: 0; max-width: 100%; }
+
+  .app {
+    /* These become the physical margins after zoom (0.5in * 0.75 = 0.375in) */
+    padding: 0.5in 0.6in;
+    max-width: 100%;
+  }
 
   /* Show print-only content */
   .print-assumptions { display: block !important; }
 
   /* Hide interactive / non-print elements */
-  .topbar-actions { display: none !important; }
-  .topbar-meta    { display: none !important; }
-  .fineprint      { display: none !important; }
-  .panel          { display: none !important; }
-  .alloc-section  { display: none !important; }
+  .topbar-actions  { display: none !important; }
+  .topbar-meta     { display: none !important; }
+  .fineprint       { display: none !important; }
+  .panel           { display: none !important; }
+  .alloc-section   { display: none !important; }
   .scenario-toggle { display: none !important; }
 
   /* Topbar */
@@ -756,7 +768,16 @@ body {
 
   /* Single-column layout — inputs panel hidden so col-right fills the page */
   .layout { display: block; }
-  .col-right { display: flex; flex-direction: column; gap: 12px; }
+  .col-right { display: flex; flex-direction: column; gap: 10px; }
+
+  /* Hero comparison */
+  .hero { break-inside: avoid; page-break-inside: avoid; }
+  .hero-card { padding: 14px 16px; }
+  .hero-big  { font-size: 38px; margin-top: 8px; line-height: 1.05; }
+  .hero-big .cents { font-size: 18px; }
+  .hero-grid { margin-top: 10px; padding-top: 8px; }
+  .hero-stat .v.small { font-size: 14px; }
+  .hero-sub { font-size: 10.5px; }
 
   /* Cards */
   .card {
@@ -769,32 +790,21 @@ body {
   .card-title { font-size: 16px; }
   .card-desc  { font-size: 11px; }
 
-  /* Hero comparison */
-  .hero { break-inside: avoid; page-break-inside: avoid; }
-  .hero-card { padding: 14px 16px; }
-  .hero-big  { font-size: 38px; margin-top: 8px; line-height: 1.05; }
-  .hero-big .cents { font-size: 18px; }
-  .hero-grid { margin-top: 10px; padding-top: 8px; }
-  .hero-stat .v.small { font-size: 14px; }
-  .hero-sub { font-size: 10.5px; }
-
   /* Budget bar */
-  .budget-bar { height: 32px; }
-  .budget-legend {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 3px 10px;
-  }
-  .legend-name { font-size: 11px; }
-  .legend-val  { font-size: 10.5px; }
+  .budget-bar { height: 30px; }
+  .budget-legend { grid-template-columns: repeat(4, 1fr); gap: 3px 10px; }
+  .legend-name { font-size: 10.5px; }
+  .legend-val  { font-size: 10px; }
 
   /* DTI gauges */
-  .gauge-row { gap: 10px; }
+  .gauge-row { gap: 10px; margin-top: 8px; }
   .gauge { padding: 10px 12px; }
   .gauge-val  { font-size: 20px; }
   .gauge-note { font-size: 10.5px; }
 
-  /* Projection chart */
+  /* Projection chart — fixed height keeps it from dominating the page */
   .chart-wrap { margin-top: 4px; }
+  .chart-svg  { height: 240px; width: 100%; }
   .chart-legend { gap: 8px 12px; margin-top: 8px; font-size: 11px; }
 
   /* Verdict */
